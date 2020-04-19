@@ -164,7 +164,6 @@ String headerText = 'Header placeholder';
                       print(predictions);
                       setState(() {
                         _setLabelsForGuess(predictions.first['label'], predictions.first['confidence']);
-                       
                       });
                     },
                     child: ClipRect(
@@ -178,25 +177,7 @@ String headerText = 'Header placeholder';
                   );
                 },
               ),
-            ),Expanded(
-              flex: 3,
-              child: Container(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.max,
-                  children: <Widget>[
-                    Center(
-                      child: Text(
-                        footerText,
-                        style: Theme.of(context).textTheme.headline
-                      ),
-                    ),
-                  ],          
-                ),
-              )
             ),
-
                   Expanded(
                     child: Container(
                       alignment: Alignment.bottomCenter,
@@ -214,6 +195,7 @@ String headerText = 'Header placeholder';
         floatingActionButton: FloatingActionButton(
         onPressed: () {
           _cleanDrawing();
+          _resetLabels();
         },
         tooltip: 'Clean',
         child: Icon(Icons.delete),
@@ -223,16 +205,22 @@ String headerText = 'Header placeholder';
   }
 
   void _nextSubmit() {
-    if(_answers[_currentIndex] == null) {
+    if(points.isEmpty == true) {
       _key.currentState.showSnackBar(SnackBar(
-        content: Text("You must select an answer to continue."),
+        content: Text("You must write an answer to continue."),
       ));
       return;
+    } else {
+      _key.currentState.showSnackBar(SnackBar(
+        content: Text(footerText),
+      ));
     }
     if(_currentIndex < (widget.questions.length - 1)){
       setState(() {
           _currentIndex++;
       });
+      _cleanDrawing();
+      _resetLabels();
     } else {
       Navigator.of(context).pushReplacement(MaterialPageRoute(
         builder: (_) => QuizFinishedPage(questions: widget.questions, answers: _answers)
