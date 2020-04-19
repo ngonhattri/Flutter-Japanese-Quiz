@@ -4,6 +4,9 @@ import 'package:flutter_jpn_ocr/models/question.dart';
 import 'package:flutter_custom_clippers/flutter_custom_clippers.dart';
 import 'package:flutter_jpn_ocr/ui/pages/quiz_finished.dart';
 import 'package:html_unescape/html_unescape.dart';
+import 'package:flutter_jpn_ocr/recognizer/contants.dart';
+import 'package:flutter_jpn_ocr/recognizer/drawing_painter.dart';
+import 'package:flutter_jpn_ocr/recognizer/brain.dart';
 
 class QuizPage extends StatefulWidget {
   final List<Question> questions;
@@ -16,6 +19,35 @@ class QuizPage extends StatefulWidget {
 }
 
 class _QuizPageState extends State<QuizPage> {
+  List<Offset> points = List();
+  AppBrain brain = AppBrain();
+  
+String headerText = 'Header placeholder';
+  String footerText = 'Footer placeholder';
+  double accuracy = 0.58;
+
+  
+
+  void _resetLabels() {
+    headerText = kWaitingForInputHeaderString;
+    footerText = kWaitingForInputFooterString;
+    accuracy = 0.00;
+  }
+
+  void _setLabelsForGuess(String guess,double acc) {
+    headerText = ""; // Empty string
+    accuracy = acc*100;
+    footerText = kGuessingInputString + guess + "-" + accuracy.toInt().toString() + "%";
+  }
+  
+  
+
+  void _cleanDrawing() {
+    setState(() {
+      points = List();
+    });
+  }
+  
   final TextStyle _questionStyle = TextStyle(
     fontSize: 18.0,
     fontWeight: FontWeight.w500,
@@ -26,12 +58,18 @@ class _QuizPageState extends State<QuizPage> {
   final Map<int,dynamic> _answers = {};
   final GlobalKey<ScaffoldState> _key = GlobalKey<ScaffoldState>();
 
+  @override
+  void initState() {
+    super.initState();
+    brain.loadModel();
+    _resetLabels();
+  }
 
   @override
   Widget build(BuildContext context){
-    print(widget);
+    //print(widget);
     Question question = widget.questions[_currentIndex];
-    print(question);
+    //print(question);
     final List<dynamic> options = question.incorrectAnswers;
     
     if(!options.contains(question.correctAnswer)) {
@@ -95,6 +133,70 @@ class _QuizPageState extends State<QuizPage> {
                       ],
                     ),
                   ),
+
+                  Container(
+              decoration: new BoxDecoration(
+                border: new Border.all(
+                  width: 3.0,
+                  color: Colors.blue,
+                ),
+              ),
+              child: Builder(
+                builder: (BuildContext context) {
+                  return GestureDetector(
+                    onPanUpdate: (details) {
+                      setState(() {
+                        RenderBox renderBox = context.findRenderObject();
+                        points.add(
+                            renderBox.globalToLocal(details.globalPosition));
+                      });
+                    },
+                    onPanStart: (details) {
+                      setState(() {
+                        RenderBox renderBox = context.findRenderObject();
+                        points.add(
+                            renderBox.globalToLocal(details.globalPosition));
+                      });
+                    },
+                    onPanEnd: (details) async {
+                      points.add(null);
+                      List predictions = await brain.processCanvasPoints(points);
+                      print(predictions);
+                      setState(() {
+                        _setLabelsForGuess(predictions.first['label'], predictions.first['confidence']);
+                       
+                      });
+                    },
+                    child: ClipRect(
+                      child: CustomPaint(
+                        size: Size(kCanvasSize, kCanvasSize),
+                        painter: DrawingPainter(
+                          offsetPoints: points,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),Expanded(
+              flex: 3,
+              child: Container(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.max,
+                  children: <Widget>[
+                    Center(
+                      child: Text(
+                        footerText,
+                        style: Theme.of(context).textTheme.headline
+                      ),
+                    ),
+                  ],          
+                ),
+              )
+            ),
+
                   Expanded(
                     child: Container(
                       alignment: Alignment.bottomCenter,
@@ -109,6 +211,13 @@ class _QuizPageState extends State<QuizPage> {
             )
           ],
         ),
+        floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          _cleanDrawing();
+        },
+        tooltip: 'Clean',
+        child: Icon(Icons.delete),
+      ),
       ),
     );
   }
