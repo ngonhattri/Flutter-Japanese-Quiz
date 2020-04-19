@@ -67,15 +67,6 @@ String headerText = 'Header placeholder';
 
   @override
   Widget build(BuildContext context){
-    //print(widget);
-    Question question = widget.questions[_currentIndex];
-    //print(question);
-    final List<dynamic> options = question.incorrectAnswers;
-    
-    if(!options.contains(question.correctAnswer)) {
-      options.add(question.correctAnswer);
-      options.shuffle();
-    }
     
     return WillPopScope(
       onWillPop: _onWillPop,
@@ -115,25 +106,6 @@ String headerText = 'Header placeholder';
                     ],
                   ),
 
-                  SizedBox(height: 20.0),
-                  Card(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        ...options.map((option)=>RadioListTile(
-                          title: Text(HtmlUnescape().convert("$option")),
-                          groupValue: _answers[_currentIndex],
-                          value: option,
-                          onChanged: (value){
-                            setState(() {
-                              _answers[_currentIndex] = option;
-                            });
-                          },
-                        )),
-                      ],
-                    ),
-                  ),
-
                   Container(
               decoration: new BoxDecoration(
                 border: new Border.all(
@@ -164,6 +136,7 @@ String headerText = 'Header placeholder';
                       print(predictions);
                       setState(() {
                         _setLabelsForGuess(predictions.first['label'], predictions.first['confidence']);
+                        _answers[_currentIndex] = predictions.first['label'];
                       });
                     },
                     child: ClipRect(

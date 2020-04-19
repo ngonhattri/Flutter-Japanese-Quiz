@@ -68,7 +68,7 @@ class CheckAnswersPage extends StatelessWidget {
             SizedBox(height: 5.0),
             correct ? Container(): Text.rich(TextSpan(
               children: [
-                TextSpan(text: "Answer: "),
+                TextSpan(text: "Đáp Án: "),
                 TextSpan(text: HtmlUnescape().convert(question.correctAnswer) , style: TextStyle(
                   fontWeight: FontWeight.w500
                 ))
